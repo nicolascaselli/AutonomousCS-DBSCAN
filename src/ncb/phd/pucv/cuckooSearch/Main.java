@@ -1,4 +1,4 @@
-package CuckooSearchAlgorithm;
+package ncb.phd.pucv.cuckooSearch;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
