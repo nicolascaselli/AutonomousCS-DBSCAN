@@ -25,6 +25,8 @@ public class DistanceMetricPunto implements DistanceMetric<Punto>{
 		for (int i = 0; i < val1.getGrado(); i++) {
 			d += Math.pow(val1.get(i) - val2.get(i), 2);
 		}
+//		System.out.print(Math.sqrt(d) +"-");
+        
 		return Math.sqrt(d);
 	}
 

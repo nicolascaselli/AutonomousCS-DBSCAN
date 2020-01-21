@@ -5,6 +5,7 @@ import java.util.List;
 public class Punto {
 	private Float[] data;
 	private int posFila, posColumna;
+	private float fitnessSolucion;
 
 	public Punto(String[] strings) {
 		super();
@@ -27,6 +28,20 @@ public class Punto {
 		this.data = data;
 		this.posFila = posF;
 		this.posColumna = posC;
+	}
+	public Punto(Float[] data, int posF, int posC, float fitness) {
+		this.data = data;
+		this.posFila = posF;
+		this.posColumna = posC;
+		this.fitnessSolucion = fitness;
+	}
+
+	public float getFitnessSolucion() {
+		return fitnessSolucion;
+	}
+
+	public void setFitnessSolucion(float fitnessSolucion) {
+		this.fitnessSolucion = fitnessSolucion;
 	}
 
 	public int getPosicionFila() {

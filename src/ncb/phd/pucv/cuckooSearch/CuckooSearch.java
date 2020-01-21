@@ -893,38 +893,38 @@ public class CuckooSearch extends Thread{
 		return ("Numero de nidos:" + this.cantNidos + "\n" + "Numero de dimensiones:" + this.cantidadColumnas + "\n" + "Operador probabilidad:" + this.probDescubrimiento + "\n" + "Numero de Iteraciones:" + this.numIteraciones + "\n");
 	}
 
-	private int[][] clusterizaDbscanSoluciones(float[][] fitnessSoluciones )
+	private int[][] clusterizaDbscanSoluciones(float[][] poblacionSoluciones, float[] vectoFitnessSoluciones )
 	{
 		
-//		Map<Integer, List<Punto>> mClusterPuntos = new HashMap <Integer, List<Punto>>();
-//		Map <Integer, Float> mFactorCluster = new HashMap <Integer, Float>();
+		Map <Integer, List<Punto>> mClusterPuntos = new HashMap <Integer, List<Punto>>();
+		Map <Integer, Float> mPromFitnessCluster = new HashMap <Integer, Float>();
 		ArrayList<Punto> puntosRuido = new ArrayList<Punto>();
 		
-		int[][] solucionClusterizada = new int[fitnessSoluciones.length][cantidadColumnas];
+		int[][] solucionClusterizada = new int[poblacionSoluciones.length][cantidadColumnas];
 		List<Punto> puntos = new ArrayList<Punto>();
 //		float pesoTransicion = 0.2F;
 
 //		 System.out.print("\nCantidad de elementos en la solucion: "+ solucion.length);
-		for (int fil = 0; fil< fitnessSoluciones.length; fil++) {
-			for (int col = 0; col< fitnessSoluciones[0].length; col++) {
-				if (fitnessSoluciones[fil][col] != 0 && fitnessSoluciones[fil][col] != 1)
-				{
-					Float[] solucion = new Float[1];
-					solucion[0] = fitnessSoluciones[fil][col];
-					Punto p = new Punto(solucion, fil, col);
-					puntos.add(p);
-				} else
-					solucionClusterizada[fil][col]=(int)fitnessSoluciones[fil][col];
-			}
+		for (int fil = 0; fil< poblacionSoluciones.length; fil++) {
+
+			Float[] solucion = new Float[cantidadColumnas];
+			for (int col = 0; col< poblacionSoluciones[0].length; col++) 
+				solucion[col] = poblacionSoluciones[fil][col];				
+			
+			Punto p = new Punto(solucion, fil, 0, vectoFitnessSoluciones[fil]);
+			puntos.add(p);
+			
 		}
 		if (puntos.size() < 2 ) {
 			System.out.print("\n Nada que clusterizar, retornando\n");
 			return solucionClusterizada;
 		}
 		
-		int minElementosEnCluster = (int) (puntos.size()*0.1f/100);
+//		int minElementosEnCluster = (int) (puntos.size()*0.1f/100);
+		int minElementosEnCluster = 2;
+
 //        double maxDistance = (double)(puntos.size()*0.0000095d/100);
-        double maxDistance = 0.00045d;
+        double maxDistance = 5.0d;
 
         int cantPuntos = puntos.size();
         
@@ -938,60 +938,54 @@ public class CuckooSearch extends Thread{
         ArrayList<ArrayList<Punto>> result = null;
         
         try {
+    		System.out.print("\n");
+
             result = clusterer.performClustering(); //-->clusteriza los puntos
+            System.out.print("\n");
             puntosRuido = clusterer.getNoiseValues(); //obtiene puntos ruido
             probDescubrimiento = (float)puntosRuido.size()/cantPuntos;
-//            int conteoCluster = 0;
-//        	float sumValPuntos = 0;
+            int conteoCluster = 0, sumFitCluster;
 
-            //Recorremos los clusteres para obtener el promedio y asignar peso
-//            for (ArrayList<Punto> arrayPnt: result) {
-//            	conteoCluster++;
-//            	sumValPuntos = 0;
-//            	mClusterPuntos.put(conteoCluster, arrayPnt);
-//            	for (int dim = 0; dim < arrayPnt.size(); dim++) {
-//            		sumValPuntos += Float.parseFloat(arrayPnt.get(dim).toString());
-//            	}
-//            	mFactorCluster.put(conteoCluster, sumValPuntos/arrayPnt.size());
-//            }
-           
-//            if(puntosRuido.size() > 0)
-//            {
-//            	sumValPuntos = 0;            	
-//                conteoCluster++;
-//                //Agregamos los puntos ruidos
-//            	mClusterPuntos.put(conteoCluster, puntosRuido);
-//                // asignamos peso a los puntos ruidos
-//                for (int nosie = 0; nosie < puntosRuido.size(); nosie++) {
-//            		sumValPuntos += Float.parseFloat(puntosRuido.get(nosie).toString());
-//            	}
-//            	mFactorCluster.put(conteoCluster, sumValPuntos/puntosRuido.size());
-//            }
-            
-        	//ahora ordenamos los promedios de cada cluster
-        	//mFactorCluster = sortByValue(mFactorCluster);
-        	//a cada promedio le asignamos si peso de cambio
-        	//pesoTransicion = 0.25F/conteoCluster;
-//            System.out.println("\nfactor de transicion inicial " + pesoTransicion);
-//            System.out.println("\nTotal Clusteres " + conteoCluster);
-    		//cantClusters = conteoCluster;
-    		//pesoInicialClusters = pesoTransicion;
-//    		for(Map.Entry<Integer, Float> entry: mFactorCluster.entrySet())
-//    		{
-//    			for (Punto punto: mClusterPuntos.get(entry.getKey()) )
-//    			{
-////					solucionClusterizada[punto.getPosicionFila()][punto
-////							.getPosicionColumna()] = rnd.nextFloat() < pesoTransicion
-////									? Math.abs(nidos[posicionMejorNido][punto.getPosicionColumna()] - 1)
-////									: nidos[posicionMejorNido][punto.getPosicionColumna()];
-////    				solucionClusterizada[punto.getPosicionFila()][punto
-////    				                  							.getPosicionColumna()] = rnd.nextFloat() >= pesoTransicion
-////    				                  									? 1
-////    				                  									: 0;				
-//    				
-//    			}
-//    			pesoTransicion+=pesoTransicion;
-//    		}
+          //Recorremos los clusteres para obtener el promedio y asignar peso
+            for (ArrayList<Punto> arrayPnt: result) {
+            	conteoCluster++;
+            	sumFitCluster = 0;
+            	mClusterPuntos.put(conteoCluster, arrayPnt);
+            	for (int dim = 0; dim < arrayPnt.size(); dim++) {
+            		sumFitCluster += arrayPnt.get(dim).getFitnessSolucion();
+            	}
+            	mPromFitnessCluster.put(conteoCluster, (float)sumFitCluster/arrayPnt.size());
+            }
+            conteoCluster++;
+        	sumFitCluster = 0;
+            for(Punto pntRuido:puntosRuido){
+            	sumFitCluster += pntRuido.getFitnessSolucion();
+            	
+            }
+        	mPromFitnessCluster.put(conteoCluster, (float)sumFitCluster/puntosRuido.size());
+
+            //mostramos los promedios para análisis:
+            for(Map.Entry<Integer, Float> entry: mPromFitnessCluster.entrySet())
+    		{
+            	if (entry.getKey() == conteoCluster) {
+            		System.out.println("cluster: " + entry.getKey() + " Promedio Fitness: "+ entry.getValue()+" Cant Puntos: "+puntosRuido.size()+"\n");
+            		System.out.println("Fitness en cluster:\n");
+            		for(Punto pntRuido:puntosRuido){
+            			System.out.println(pntRuido.getFitnessSolucion()+" ");
+                    }
+            		
+            	}else {
+            		System.out.println("cluster: " + entry.getKey() + " Promedio Fitness: "+ entry.getValue()+" Cant Puntos: "+mClusterPuntos.get(entry.getKey()).size()+"\n");
+            		System.out.println("Fitness en cluster:\n");
+            		for (ArrayList<Punto> arrayPnt: result) {
+                    	
+                    	for (int dim = 0; dim < arrayPnt.size(); dim++) {
+                    		System.out.println(arrayPnt.get(dim).getFitnessSolucion()+" ");
+                    	}
+                    }
+            	}
+
+    		}
             
         } catch (DBSCANClusteringException e) {
             System.out.println("Should not have failed while performing clustering: " + e);
@@ -1108,7 +1102,12 @@ public class CuckooSearch extends Thread{
 						 ******************************************************************/
 						if (i%100 == 0)
 						{
-							clusterizaDbscanSoluciones(nidosDecimales);
+							System.out.print( "\n");
+
+							clusterizaDbscanSoluciones(nidosDecimales,  fitness);
+							if (probDescubrimiento == 0)
+								probDescubrimiento = 0.25f;
+							
 							System.out.print("|   " +String.format("%02d", numEjecucion)+"   |   " +String.format("%04d", i)+"  |   " + numIteraciones +"   |    " + cantNidos + "  |    " + String.format("%.8f", probDescubrimiento)
 									+"   |"+ semilla + " |     "+     mBestFistInstancias.get(inst)     
 									+"       |      "+ (int)bestFit+ "     |  "+ String.format("%.2f", (bestFit- mBestFistInstancias.get(inst))/mBestFistInstancias.get(inst)*100)
