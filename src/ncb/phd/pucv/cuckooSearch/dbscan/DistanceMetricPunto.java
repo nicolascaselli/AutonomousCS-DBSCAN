@@ -1,10 +1,11 @@
 package ncb.phd.pucv.cuckooSearch.dbscan;
 
+import ncb.phd.pucv.cuckooSearch.Punto;
+
 //import org.apache.commons.math3.ml.distance.EuclideanDistance;
 
 import ncb.phd.pucv.cuckooSearch.dbscan.DBSCANClusteringException;
 import ncb.phd.pucv.cuckooSearch.dbscan.DistanceMetric;
-import ncb.phd.pucv.cuckooSearch.dbscan.Punto;
 
 /**
  * Distance metric implementation for numeric values.

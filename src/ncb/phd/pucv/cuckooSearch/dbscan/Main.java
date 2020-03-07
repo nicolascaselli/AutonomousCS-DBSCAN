@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 //import java.util.Random;
 
+import ncb.phd.pucv.cuckooSearch.Punto;
+
 public class Main {
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 //		Random random = new Random(4520);

@@ -12,7 +12,9 @@ import java.io.FileWriter;
 //import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 //import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,7 +28,6 @@ import java.util.logging.Logger;
 
 import ncb.phd.pucv.cuckooSearch.dbscan.DBSCANClusterer;
 import ncb.phd.pucv.cuckooSearch.dbscan.DBSCANClusteringException;
-import ncb.phd.pucv.cuckooSearch.dbscan.Punto;
 import ncb.phd.pucv.cuckooSearch.dbscan.DistanceMetricPunto;
 
 //import org.jfree.data.xy.XYSeries;
@@ -40,7 +41,7 @@ public class CuckooSearch extends Thread{
 	private static int cantNidos, cantNidosInicial; //número de población de nidos(soluciones)
 	private static float probDescubrimiento, probDescubrimientoInicial ;  //Probabilidad de descubrir el nido(solución) por la especie dueña de este.
 	private static int numIteraciones; //Número de iteraciones del ciclo de búsqueda.
-	private static String tipoBinarizacion, tipoDiscretizacion;
+	private static String tipoBinarizacion, tipoDiscretizacion, idArchivo;
 	private static float nidosDecimales[][], nidosBinarios[][];
 	private static int costos[];
 	private static int restricciones[][];
@@ -915,22 +916,27 @@ public class CuckooSearch extends Thread{
 			puntos.add(p);
 			
 		}
-		if (puntos.size() < 2 ) {
+		int cantPuntos = puntos.size();
+		
+		if (cantPuntos < 2 ) {
 			System.out.print("\n Nada que clusterizar, retornando\n");
 			return solucionClusterizada;
 		}
 		
 //		int minElementosEnCluster = (int) (puntos.size()*0.1f/100);
-		int minElementosEnCluster = 2;
-
+		// Se sugiere setear el valor del minElemen como LOG(n);
+		int minElementosEnCluster = 3;
+//		int minElementosEnCluster = (int) Math.log10(cantPuntos);
+//		System.out.println(minElementosEnCluster+" es el Log(cantPuntos)");
 //        double maxDistance = (double)(puntos.size()*0.0000095d/100);
-        double maxDistance = 5.0d;
+//        double epsilonValue = 5.0d;
+		double epsilonValue = getEpsilonValueKnn(minElementosEnCluster, puntos);
 
-        int cantPuntos = puntos.size();
+        
         
         DBSCANClusterer<Punto> clusterer = null;
         try {
-            clusterer = new DBSCANClusterer<Punto>(puntos, minElementosEnCluster, maxDistance, new DistanceMetricPunto());
+            clusterer = new DBSCANClusterer<Punto>(puntos, minElementosEnCluster, epsilonValue, new DistanceMetricPunto());
         } catch (DBSCANClusteringException e1) {
             System.out.println("Should not have failed on instantiation: " + e1);
         }
@@ -994,6 +1000,39 @@ public class CuckooSearch extends Thread{
 		return solucionClusterizada;
 	}
 	
+	private double getEpsilonValueKnn(int kValue, List<Punto> puntos) {
+		//Copiamos los puntos a evaluar para compararlos entre si
+		List<Punto> lPuntosRecorrer = new ArrayList<>(puntos);
+		double meanTotalPuntos = 0;
+		
+		for(Punto ptoOrigen:puntos)
+		{
+			//creamos una lista que contendrá las distancias del punto evaluado con el resto
+			List<Double> distancias = new ArrayList<Double>();
+			
+			for(Punto ptoDestino:lPuntosRecorrer){
+				if (!ptoOrigen.equals(ptoDestino))
+					distancias.add(ptoOrigen.distanciaEuclideana(ptoDestino));
+			}
+			//Ordenamos la lista de menor a mayor, para sacar el promedio de los k primeros elementos
+			Collections.sort(distancias);
+			//calculamos el promedio de los k-primeros valores
+			double meanPuntoOrigen = 0;
+			
+			for(int i = 0; i<kValue; i++) {
+				meanPuntoOrigen += distancias.get(i);
+//				System.out.println(meanPuntoOrigen + "");
+			}
+			meanPuntoOrigen = meanPuntoOrigen/kValue;
+			
+			//sumamos el promedio del punto al promedio total
+			meanTotalPuntos += meanPuntoOrigen;
+		}
+		meanTotalPuntos = meanTotalPuntos/puntos.size();
+		System.out.println("kvalue: "+ meanTotalPuntos);
+		return 	meanTotalPuntos;
+	}
+
 	@Override
 	public  void run() {
 		int repActual = 1;//Integer.parseInt(args[0]);
@@ -1011,7 +1050,7 @@ public class CuckooSearch extends Thread{
 			 	System.out.print("Archivo: "+mNombresInstancias.get(inst)+"\nFilas: "+cantidadFilas+"\nColumnas:"+cantidadColumnas+"\n\n");
 			 	System.out.print("|Nº EJEC |   ITER  | ITER MAX |  NIDOS |    PROB DESC    |  SEMILLA     | MEJOR FITNESS |   FIT. FOUND |  RDP  | TIME |\n");
 	            System.out.print("|__________________________________________________________________________________________________________________________\n");
-	            
+	            idArchivo = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 			
 				for (int numEjecucion = 1; numEjecucion <= 31; numEjecucion++)
 				{
@@ -1107,6 +1146,10 @@ public class CuckooSearch extends Thread{
 							clusterizaDbscanSoluciones(nidosDecimales,  fitness);
 							if (probDescubrimiento == 0)
 								probDescubrimiento = 0.25f;
+							else if(probDescubrimiento >0.4f)
+								probDescubrimiento = 0.45f;
+							else if (probDescubrimiento <0.1f)
+								probDescubrimiento = 0.1f;
 							
 							System.out.print("|   " +String.format("%02d", numEjecucion)+"   |   " +String.format("%04d", i)+"  |   " + numIteraciones +"   |    " + cantNidos + "  |    " + String.format("%.8f", probDescubrimiento)
 									+"   |"+ semilla + " |     "+     mBestFistInstancias.get(inst)     
@@ -1114,7 +1157,7 @@ public class CuckooSearch extends Thread{
 									+ " |  " + (float)(System.currentTimeMillis()-tiempoInicioEjecucion)/1000+"|\n");
 							/* guardamos resultados en archivo plano*/
 			                Save(numEjecucion, i,
-			                		"resources/output/Salida_"+cantNidos+"DBSCAN_autoPA_" + numIteraciones +mNombresInstancias.get(inst),
+			                		"resources/output/Salida_DBSCAN_autoPA_"+idArchivo +"_" + mNombresInstancias.get(inst),
 			                		mBestFistInstancias.get(inst), 
 			                		mNombresInstancias.get(inst) );
 			                if(bestFit == bestFitAnterior)
@@ -1157,7 +1200,7 @@ public class CuckooSearch extends Thread{
 							+ " |  " + (float)(System.currentTimeMillis()-tiempoInicioEjecucion)/1000+"|\n");
 							/* guardamos resultados en archivo plano*/
 			                Save(numEjecucion, i,
-			                		"resources/output/Salida_"+cantNidos+"DBSCAN_autoPA_" + numIteraciones +mNombresInstancias.get(inst),
+			                		"resources/output/Salida_DBSCAN_autoPA_"+idArchivo +"_" + mNombresInstancias.get(inst),
 			                		mBestFistInstancias.get(inst), 
 			                		mNombresInstancias.get(inst) );
 						}
@@ -1203,7 +1246,7 @@ public class CuckooSearch extends Thread{
 					
 					/* guardamos resultados en archivo plano*/
 					Save(numEjecucion, i,
-	                		"resources/output/Salida_"+cantNidos+"DBSCAN_autoPA_" + numIteraciones +mNombresInstancias.get(inst),
+	                		"resources/output/Salida_DBSCAN_autoPA_"+idArchivo +"_" + mNombresInstancias.get(inst),
 	                		mBestFistInstancias.get(inst), 
 	                		mNombresInstancias.get(inst) );
 	                

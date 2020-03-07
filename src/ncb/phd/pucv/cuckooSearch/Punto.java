@@ -1,4 +1,4 @@
-package ncb.phd.pucv.cuckooSearch.dbscan;
+package ncb.phd.pucv.cuckooSearch;
 import java.util.ArrayList;
 import java.util.List;
 
