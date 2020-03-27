@@ -1,5 +1,6 @@
 package ncb.phd.pucv.cuckooSearch;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class Punto {
@@ -101,4 +102,13 @@ public class Punto {
 		}
 		return true;
 	}
+}
+class SortbyFitness implements Comparator<Punto> 
+{ 
+    // Used for sorting in ascending order of 
+    // roll number 
+    public int compare(Punto a, Punto b) 
+    { 
+        return (int)(a.getFitnessSolucion()-b.getFitnessSolucion()); 
+    } 
 }

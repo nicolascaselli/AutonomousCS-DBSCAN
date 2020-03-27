@@ -52,6 +52,7 @@ public class CuckooSearch extends Thread{
 	private static boolean fs, ss;
 	private static Map<Integer, String> mNombresInstancias = new HashMap<Integer, String>(); 
 	private static Map<Integer, Integer> mBestFistInstancias = new HashMap<Integer, Integer>();
+	private static Random rnd;
     /**
      * {@code logger} = Log de errores
      */
@@ -462,8 +463,52 @@ public class CuckooSearch extends Thread{
 
 		return z >= 0 ? ans : -ans;
 	}
+
+	private float[] transferFunctionSolucion(float[] decimalNest, Random rnd, String tipoBinarizacion) {
+		float[] f = new float[cantidadColumnas];
+//		for (int i = 0; i < cantNidos; i++) {
+			for (int j = 0; j < cantidadColumnas; j++) {
+//				switch (tipoBinarizacion){
+//					case "sshape1":
+//						f[i][j] = (float) (1/(1+Math.pow(Math.E,-2*f[i][j])));
+//						
+//					case "sshape2":
+//						f[i][j] = (float) (1 / (1 + Math.pow(Math.E, -f[i][j] )));
+//						
+//					case "sshape3":
+//						f[i][j] = (float) (1/(1+Math.pow(Math.E,-1*f[i][j]/2)));
+//						
+//					case "sshape4":
+//						f[i][j] = (float) (1/(1+Math.pow(Math.E,-1*f[i][j]/3)));
+//			
+//					case "vshape1":
+//						f[i][j] = (float) Math.abs(erf((Math.sqrt(Math.PI) / 2) * f[i][j] ));
+//			
+//					case "vshape2":
+//						f[i][j] = Math.abs((float)Math.tan(f[i][j] ));
+//	//					return rnd.nextFloat() <= Math.abs((float)Math.tan(f)) ? 1:0;
+//			
+//					case "vshape3":
+//						f[i][j] = (float) Math.abs(f[i][j]/Math.sqrt(1+Math.pow(f[i][j] , 2)));
+//			
+//					case "vshape4":
+//						f[i][j] = (float) Math.abs(f[i][j]/Math.sqrt(1+Math.pow(f[i][j] , 2)));
+//			
+//					case "vshape5":
+//						f[i][j] = (float) Math.abs(2/Math.PI*Math.atan(Math.PI/2*f[i][j] ));        	
+//					case "basic":
+//						f[i][j] = 0.5 <= f[i][j] ? 0 : 1;
+//					default:
+//						f[i][j] = 0;
+//				}
+				f[j] = 0.5 <= decimalNest[j] ? 1 : 0;
+			}
+//		}			
+		return f;
+
+	}
 	
-	private float[][] transferFunctionPoblacion(float[][] decimalNest, Random rnd, String tipoBinarizacion) throws FileNotFoundException, IOException {
+	private float[][] transferFunctionPoblacion(float[][] decimalPopulation, Random rnd, String tipoBinarizacion) throws FileNotFoundException, IOException {
 		float[][] f = new float[cantNidos][cantidadColumnas];
 		for (int i = 0; i < cantNidos; i++) {
 			for (int j = 0; j < cantidadColumnas; j++) {
@@ -500,7 +545,7 @@ public class CuckooSearch extends Thread{
 //					default:
 //						f[i][j] = 0;
 //				}
-				f[i][j] = 0.5 <= decimalNest[i][j] ? 1 : 0;
+				f[i][j] = 0.5 <= decimalPopulation[i][j] ? 1 : 0;
 			}
 		}			
 		return f;
@@ -657,7 +702,7 @@ public class CuckooSearch extends Thread{
 		for (int i = 0; i < this.cantNidos; i++) {
 			for (int j = 0; j < this.cantidadColumnas; j++) {
 				float valor;
-				if(i > nidos.length-1)
+				if(i > nidos.length-1) //quiere decir que son nidos nuevos (nuevas filas), y son valores aleatoreos.
 				{
 					 valor = rnd.nextFloat();
 					
@@ -961,6 +1006,7 @@ public class CuckooSearch extends Thread{
             		sumFitCluster += arrayPnt.get(dim).getFitnessSolucion();
             	}
             	mPromFitnessCluster.put(conteoCluster, (float)sumFitCluster/arrayPnt.size());
+            	
             }
             conteoCluster++;
         	sumFitCluster = 0;
@@ -975,18 +1021,60 @@ public class CuckooSearch extends Thread{
     		{
             	if (entry.getKey() == conteoCluster) {
             		System.out.println("cluster: " + entry.getKey() + " Promedio Fitness: "+ entry.getValue()+" Cant Puntos: "+puntosRuido.size()+"\n");
-            		System.out.println("Fitness en cluster:\n");
+            		System.out.println("Fitness en cluster Ruido:\n");
+            		Collections.sort(puntosRuido, new SortbyFitness());
             		for(Punto pntRuido:puntosRuido){
             			System.out.println(pntRuido.getFitnessSolucion()+" ");
                     }
+            		System.out.println("Análisis de Fit en Cluster Ruido:\n(PromedioClusterRuido > bestFit-1 && PromedioClusterRuido < bestFit+1)");
+                	System.out.println("if ("+entry.getValue() +"> "+(bestFit-1)+" && "+entry.getValue()+" < "+(bestFit+1)+")");
+                	if (entry.getValue() > bestFit-1 && entry.getValue() < bestFit+1)
+                	{
+//                		Collections.sort(arrayPnt, new SortbyFitness());
+                		System.out.println("promedio dentro del rango!!:");
+                		System.out.println("Reemplazando la mitad del cluster en nuevos nidos:");
+                		//si estamos acá, quiere decir que el cluster tiene valores cercanos al mejor valor
+                		for (int dim = (puntosRuido.size()/2); dim < puntosRuido.size(); dim++) {
+                			for(int col = 0; col < cantidadColumnas; col++) {
+                				nidosDecimales[puntosRuido.get(dim).getPosicionFila()][col] = rnd.nextFloat();
+                        	}
+                			//aplicamos funcion de transferencia
+                			nidosDecimales[puntosRuido.get(dim).getPosicionFila()] = transferFunctionSolucion(nidosDecimales[puntosRuido.get(dim).getPosicionFila()], rnd, tipoBinarizacion);
+        					//reparamos solucion
+        					nidosBinarios[puntosRuido.get(dim).getPosicionFila()] = evaluarRestriccionesYRepara(nidosBinarios[puntosRuido.get(dim).getPosicionFila()], restricciones, costos);
+            				System.out.println(funcionObjetivo(nidosBinarios[puntosRuido.get(dim).getPosicionFila()], costos));
+                    	}
+                	}
             		
             	}else {
             		System.out.println("cluster: " + entry.getKey() + " Promedio Fitness: "+ entry.getValue()+" Cant Puntos: "+mClusterPuntos.get(entry.getKey()).size()+"\n");
             		System.out.println("Fitness en cluster:\n");
             		for (ArrayList<Punto> arrayPnt: result) {
                     	
-                    	for (int dim = 0; dim < arrayPnt.size(); dim++) {
+            			Collections.sort(arrayPnt, new SortbyFitness());
+                		System.out.println("Mostrando los fitness del cluster "+ entry.getKey() +" ascendentes:");
+                		//si estamos acá, quiere decir que el cluster tiene valores cercanos al mejor valor
+                		for (int dim = 0; dim < arrayPnt.size(); dim++) {
                     		System.out.println(arrayPnt.get(dim).getFitnessSolucion()+" ");
+                    	}
+                		System.out.println("Análisis de Fit en Cluster "+ entry.getKey() +":\n(PromedioCluster > bestFit-1 && PromedioCluster < bestFit+1)");
+                    	System.out.println("if ("+entry.getValue() +"> "+(bestFit-1)+" && "+entry.getValue()+" < "+(bestFit+1)+")");
+                    	if (entry.getValue() > bestFit-1 && entry.getValue() < bestFit+1)
+                    	{
+//                    		Collections.sort(arrayPnt, new SortbyFitness());
+                    		System.out.println("promedio dentro del rango:");
+                    		System.out.println("Reemplazando la mitad del cluster en nuevos nidos:");
+                    		//si estamos acá, quiere decir que el cluster tiene valores cercanos al mejor valor
+                    		for (int dim = (arrayPnt.size()/2); dim < arrayPnt.size(); dim++) {
+                    			for(int col = 0; col < cantidadColumnas; col++) {
+                    				nidosDecimales[arrayPnt.get(dim).getPosicionFila()][col] = rnd.nextFloat();
+                            	}
+                    			//aplicamos funcion de transferencia
+                    			nidosDecimales[arrayPnt.get(dim).getPosicionFila()] = transferFunctionSolucion(nidosDecimales[arrayPnt.get(dim).getPosicionFila()], rnd, tipoBinarizacion);
+            					//reparamos solucion
+            					nidosBinarios[arrayPnt.get(dim).getPosicionFila()] = evaluarRestriccionesYRepara(nidosBinarios[arrayPnt.get(dim).getPosicionFila()], restricciones, costos);
+                				System.out.println(funcionObjetivo(nidosBinarios[arrayPnt.get(dim).getPosicionFila()], costos));
+                        	}
                     	}
                     }
             	}
@@ -1052,11 +1140,11 @@ public class CuckooSearch extends Thread{
 	            System.out.print("|__________________________________________________________________________________________________________________________\n");
 	            idArchivo = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 			
-				for (int numEjecucion = 1; numEjecucion <= 31; numEjecucion++)
+				for (int numEjecucion = 1; numEjecucion <= 15; numEjecucion++)
 				{
 		
 					int mejorIteracion = 0;
-					Random rnd;
+					
 					rnd = new Random();
 					
 					tiempoInicioEjecucion = System.currentTimeMillis();
@@ -1146,9 +1234,9 @@ public class CuckooSearch extends Thread{
 							clusterizaDbscanSoluciones(nidosDecimales,  fitness);
 							if (probDescubrimiento == 0)
 								probDescubrimiento = 0.25f;
-							else if(probDescubrimiento >0.4f)
+							else if(probDescubrimiento >=0.45f)
 								probDescubrimiento = 0.45f;
-							else if (probDescubrimiento <0.1f)
+							else if (probDescubrimiento <=0.1f)
 								probDescubrimiento = 0.1f;
 							
 							System.out.print("|   " +String.format("%02d", numEjecucion)+"   |   " +String.format("%04d", i)+"  |   " + numIteraciones +"   |    " + cantNidos + "  |    " + String.format("%.8f", probDescubrimiento)
