@@ -1,0 +1,2 @@
+| # |    #ITER | #IterMAX | Nest |      %Desc |      semilla | BestFit |GottedFit |  RDP |  instancia | time |
+-------------------------------------------------------------------------------------------------
