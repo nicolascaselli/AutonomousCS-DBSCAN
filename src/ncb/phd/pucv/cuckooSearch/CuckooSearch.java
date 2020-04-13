@@ -45,7 +45,7 @@ public class CuckooSearch extends Thread{
 	private static float nidosDecimales[][], nidosBinarios[][];
 	private static int costos[];
 	private static int restricciones[][];
-	private static int cantidadFilas, cantidadColumnas, iteracionIntervencionML;
+	private static int cantidadFilas, cantidadColumnas, iteracionIntervencionML, cantEjecuciones;
 	private static float bestFit, bestFitAnterior;
 	private static long tiempoInicioEjecucion, tiempoInicioGlobal, tiempoTermino;
 	private static long semilla;
@@ -131,6 +131,43 @@ public class CuckooSearch extends Thread{
 	}
 
 	CuckooSearch(int cant_Nidos, float probabilidad,  int numeroiteraciones,
+			Map<Integer, String> mInstanciasAprocesar, 
+			Map<Integer, Integer> mMejoresFitsInstancias,
+			String discretizacion,
+			String binarizacion,
+			int [] vectorCostos,
+			int [] matrizRestricciones[],
+			int numFilas,
+			int numColumnas,
+			int _iteracionIntervencionML,
+			int _cantEjecuciones) { //Constructor
+		cantNidos = cant_Nidos;
+		cantNidosInicial = cant_Nidos;
+		probDescubrimientoInicial = probabilidad;
+		probDescubrimiento = probabilidad;
+		//num_dimensiones = 0;
+		numIteraciones = numeroiteraciones;
+		tipoDiscretizacion = discretizacion;
+		tipoBinarizacion = binarizacion;
+		mNombresInstancias = mInstanciasAprocesar;
+		mBestFistInstancias = mMejoresFitsInstancias;
+		nidosDecimales = null;
+		costos = vectorCostos;
+		restricciones = matrizRestricciones;
+		bestFit = 0;
+		tiempoInicioEjecucion = 0;
+		tiempoInicioGlobal = System.currentTimeMillis();;
+		tiempoTermino = 0;
+		semilla = new Date().getTime();
+		cantidadColumnas = numColumnas;
+		cantidadFilas = numFilas;
+		iteracionIntervencionML = _iteracionIntervencionML;
+		cantEjecuciones = _cantEjecuciones;
+
+
+}
+	
+	CuckooSearch(int cant_Nidos, float probabilidad,  int numeroiteraciones,
 						Map<Integer, String> mInstanciasAprocesar, 
 						Map<Integer, Integer> mMejoresFitsInstancias,
 						String discretizacion,
@@ -161,6 +198,7 @@ public class CuckooSearch extends Thread{
 		cantidadColumnas = numColumnas;
 		cantidadFilas = numFilas;
 		iteracionIntervencionML = _iteracionIntervencionML;
+		cantEjecuciones = 31;
 		
 
 	}
@@ -191,7 +229,7 @@ public class CuckooSearch extends Thread{
 		tiempoTermino = 0;
 		semilla = new Date().getTime();
 		iteracionIntervencionML = 200;
-		
+		cantEjecuciones = 31;
 
 	}
 	
@@ -1133,8 +1171,8 @@ public class CuckooSearch extends Thread{
 
 	@Override
 	public  void run() {
-		int repActual = 1;//Integer.parseInt(args[0]);
-		int posicionmejor,aux = 0, i=0, contIncrementoNidos= 1, contDecrementoNidos=1;
+//		int repActual = 1;//Integer.parseInt(args[0]);
+		int posicionmejor,aux = 0, contIteracion=0, contIncrementoNidos= 1, contDecrementoNidos=1;
 		float nuevosnidos[][] = null;
 
 		float alfa = (float) 0.01;
@@ -1150,7 +1188,7 @@ public class CuckooSearch extends Thread{
 	            System.out.print("|__________________________________________________________________________________________________________________________\n");
 	            idArchivo = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 			
-				for (int numEjecucion = 1; numEjecucion <= 15; numEjecucion++)
+				for (int numEjecucion = 1; numEjecucion <= cantEjecuciones; numEjecucion++)
 				{
 		
 					int mejorIteracion = 0;
@@ -1186,10 +1224,10 @@ public class CuckooSearch extends Thread{
 		
 					int auxPosicion = posicionmejor;
 					bestFit = fitness[posicionmejor];
-					i = 1;
+					contIteracion = 1;
 		
 					
-					while (i <= numIteraciones) { //Aqui comienza a iterar el algoritmo CS.
+					while (contIteracion <= numIteraciones) { //Aqui comienza a iterar el algoritmo CS.
 						nuevosnidos = generarNuevasSoluciones(nidosDecimales, posicionmejor, restricciones, costos, fitness, rnd, alfa, tipoBinarizacion); //Aqui se generarán nuevas soluciones aplicando LF                                                          
 						bestFitAnterior = bestFit;
 
@@ -1211,7 +1249,7 @@ public class CuckooSearch extends Thread{
 						if (posicionmejor != auxPosicion && fitness[posicionmejor] != bestFit) {
 							auxPosicion = posicionmejor;
 							bestFit = fitness[posicionmejor];
-							mejorIteracion = i;
+							mejorIteracion = contIteracion;
 						}
 						
 						nuevosnidos = nidosVacios(nidosDecimales, posicionmejor, restricciones, rnd, alfa, costos, tipoBinarizacion);
@@ -1232,12 +1270,12 @@ public class CuckooSearch extends Thread{
 						if (posicionmejor != auxPosicion && fitness[posicionmejor] != bestFit) {
 							auxPosicion = posicionmejor;
 							bestFit = fitness[posicionmejor];
-							mejorIteracion = i;
+							mejorIteracion = contIteracion;
 						}
 						/*******************************************************************
 						 * APLICAMOS ML PARA RESTABLECER PARAMETROS
 						 ******************************************************************/
-						if (i%200 == 0)
+						if (contIteracion%iteracionIntervencionML == 0)
 						{
 							System.out.print( "\n");
 
@@ -1249,13 +1287,13 @@ public class CuckooSearch extends Thread{
 							else if (probDescubrimiento <=0.1f)
 								probDescubrimiento = 0.1f;
 							
-							System.out.print("|   " +String.format("%02d", numEjecucion)+"   |   " +String.format("%04d", i)+"  |   " + numIteraciones +"   |    " + cantNidos + "  |    " + String.format("%.8f", probDescubrimiento)
+							System.out.print("|   " +String.format("%02d", numEjecucion)+"   |   " +String.format("%04d", contIteracion)+"  |   " + numIteraciones +"   |    " + cantNidos + "  |    " + String.format("%.8f", probDescubrimiento)
 									+"   |"+ semilla + " |     "+     mBestFistInstancias.get(inst)     
 									+"       |      "+ (int)bestFit+ "     |  "+ String.format("%.2f", (bestFit- mBestFistInstancias.get(inst))/mBestFistInstancias.get(inst)*100)
 									+ " | " + mNombresInstancias.get(inst)  
 									+ " |  " + (float)(System.currentTimeMillis()-tiempoInicioEjecucion)/1000+"|\n");
 							/* guardamos resultados en archivo plano*/
-			                Save(numEjecucion, i,
+			                Save(numEjecucion, contIteracion,
 			                		"resources/output/Salida_DBSCAN_autoPA_"+idArchivo +"_" + mNombresInstancias.get(inst),
 			                		mBestFistInstancias.get(inst), 
 			                		mNombresInstancias.get(inst) );
@@ -1292,14 +1330,14 @@ public class CuckooSearch extends Thread{
 			                if(contDecrementoNidos == 2 && cantNidos >=15)
 			                	cantNidos -=5; contDecrementoNidos = 0;
 						}
-						if (i==1){
-							System.out.print("|   " +String.format("%02d", numEjecucion)+"   |   " +String.format("%04d", i)+"  |   " + numIteraciones +"   |    " + cantNidos + "  |    " + String.format("%.8f", probDescubrimiento)
+						if (contIteracion==1){
+							System.out.print("|   " +String.format("%02d", numEjecucion)+"   |   " +String.format("%04d", contIteracion)+"  |   " + numIteraciones +"   |    " + cantNidos + "  |    " + String.format("%.8f", probDescubrimiento)
 							+"   |"+ semilla + " |     "+     mBestFistInstancias.get(inst)     
 							+"       |      "+ (int)bestFit+ "     |  "+ String.format("%.2f", (bestFit- mBestFistInstancias.get(inst))/mBestFistInstancias.get(inst)*100)
 							+ " | " + mNombresInstancias.get(inst) 
 							+ " |  " + (float)(System.currentTimeMillis()-tiempoInicioEjecucion)/1000+"|\n");
 							/* guardamos resultados en archivo plano*/
-			                Save(numEjecucion, i,
+			                Save(numEjecucion, contIteracion,
 			                		"resources/output/Salida_DBSCAN_autoPA_"+idArchivo +"_" + mNombresInstancias.get(inst),
 			                		mBestFistInstancias.get(inst), 
 			                		mNombresInstancias.get(inst) );
@@ -1310,12 +1348,12 @@ public class CuckooSearch extends Thread{
 						 ******************************************************************/
 						if(bestFit <= mBestFistInstancias.get(inst))
 							break;
-						i++;
+						contIteracion++;
 					}
 					
 					//termino de iteraciones, validando y mostrando resultados
 					float fit = 0;
-					for (i = 0; i < cantidadColumnas; i++) {
+					for (int i = 0; i < cantidadColumnas; i++) {
 						fit = fit + funcionObjetivo(nidosBinarios[posicionmejor][i], i, costos);
 					}
 					//	        System.out.print("\n\nMEJOR FITNESS:" + fit + " EN LA POSICION:" + posicionmejor + "\n");
@@ -1325,7 +1363,7 @@ public class CuckooSearch extends Thread{
 					aux = 0;
 					int sumatoria = 0;
 					//	        System.out.print("\n\nCOMPROBANDO RESTRICCIONES...\n");
-					for (i = 0; i < restricciones.length; i++) {
+					for (int i = 0; i < restricciones.length; i++) {
 						for (int j = 0; j < cantidadColumnas; j++) {
 							if (restricciones[i][j] == 1 && nidosBinarios[posicionmejor][j] == 1) {
 								sumatoria++;
@@ -1339,20 +1377,24 @@ public class CuckooSearch extends Thread{
 						System.out.print("\n\nERROR EN PASO DE UNA O MAS RESTRICCION\n");
 					}
 					tiempoTermino = System.currentTimeMillis();
-					System.out.print("|   " +String.format("%02d", numEjecucion)+"   |   " +String.format("%04d", numIteraciones)+"  |   " + numIteraciones +"   |    " + cantNidos + "  |    " + String.format("%.8f", probDescubrimiento)
+					System.out.print("|   " +String.format("%02d", numEjecucion)+"   |   " +String.format("%04d", contIteracion-1)+"  |   " + numIteraciones +"   |    " + cantNidos + "  |    " + String.format("%.8f", probDescubrimiento)
 									+"   |"+ semilla + " |     "+     mBestFistInstancias.get(inst)     
 									+"       |      "+ (int)bestFit+ "     |  "+ String.format("%.2f", (bestFit- mBestFistInstancias.get(inst))/mBestFistInstancias.get(inst)*100)
 									+ " | " + mNombresInstancias.get(inst) 
 									+ " |  " + (float)(System.currentTimeMillis()-tiempoInicioEjecucion)/1000+"|\n");
 					
 					/* guardamos resultados en archivo plano*/
-					Save(numEjecucion, i,
+					Save(numEjecucion, contIteracion,
 	                		"resources/output/Salida_DBSCAN_autoPA_"+idArchivo +"_" + mNombresInstancias.get(inst),
 	                		mBestFistInstancias.get(inst), 
 	                		mNombresInstancias.get(inst) );
 	                
 				}
-				System.out.println("Ejecuciones terminadas en: "+ (tiempoTermino-tiempoInicioGlobal)/3600000 +":"+ ((tiempoTermino-tiempoInicioGlobal)%3600000)/60000 +":"+ ((tiempoTermino-tiempoInicioGlobal)%3600000)%60000 );
+				System.out.println("Ejecuciones terminadas en (DD:HH:MM:SS): "
+						+(tiempoTermino-tiempoInicioGlobal)/86400000 +":"
+				+ ((tiempoTermino-tiempoInicioGlobal)%86400000)/3600000 +":"
+						+ ((tiempoTermino-tiempoInicioGlobal)%3600000)/60000 +":"
+				+ (((tiempoTermino-tiempoInicioGlobal)%3600000)%60000)/1000 );
 			}
 
 			//CS.generarExcel(numerofilas,numerocolumnas,numeroIteraciones,fitness[posicionmejor],fitness[posicionPeor],fBinarizacion,id,archivo.getName().replace(".txt", ""),repActual,tiempoInicio,mejorIteracion);

@@ -456,7 +456,8 @@ public class Main {
 		 int cantNidos = 35;
 		 float probDescub = (float)0.25;
 		 int numeroIteraciones = 5000; 
-		 int iterIntervML = 200;
+		 int iterIntervML = 200, cantRepeticiones = 31;
+		 
 //		 int cantInstancias = 65, cantTiposBinarizaciones = 14;
 		 int cantInstancias = 65, cantTiposBinarizaciones = 1;
 		 
@@ -496,6 +497,11 @@ public class Main {
 		 if(iterLibertad != "")
 		 	iterIntervML = Integer.parseInt(iterLibertad);
 		 
+		 System.out.println("\nIngresa la cantidad de repeticiones (default 31): ");
+		 String strCantRepeticiones = in.nextLine();
+		 if(strCantRepeticiones != "")
+			 cantRepeticiones = Integer.parseInt(strCantRepeticiones);
+		 
 		 System.out.println("\npresiona cualquier tecla paracontinuar: ");
 		 in.nextLine();
 //		 ExecutorService exec = Executors.newFixedThreadPool(2);
@@ -512,7 +518,8 @@ public class Main {
             												restricciones,
             												numeroFilas,
             												numeroColumnas,
-            												iterIntervML);
+            												iterIntervML,
+            												cantRepeticiones);
 			 
 
 			  CS_SCP1.start();
