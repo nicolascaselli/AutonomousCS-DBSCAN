@@ -460,11 +460,13 @@ public class Main {
 		 
 //		 int cantInstancias = 65, cantTiposBinarizaciones = 14;
 		 int cantInstancias = 65, cantTiposBinarizaciones = 1;
-		 
+		 String instDesde, instHasta, iterLibertad, strCantRepeticiones;
 //		 String binarizacion = "standard";
 		 String nombreArchivoSalida = "resources/input/";
 		 try {
-			 
+			 System.out.println(args.length);
+			 for (int i = 0; i<args.length;i++)
+				 System.out.println(args[i].toString());
 			 
 		System.out.println("Cantidad de Instancias cargadas: "+cantInstancias);
 
@@ -472,16 +474,40 @@ public class Main {
 		 cargaInstancias(cantInstancias);
 
 		 cargaTiposDeBinarizaciones(cantTiposBinarizaciones);
-		 System.out.println("Lista de instancias disponibles: \n");
-		 for(Map.Entry<Integer, String> instance:mNombresInstanciasCargadas.entrySet()) {
-			 System.out.println(instance.getKey()+" - "+instance.getValue());
+		 if(args.length >1) {
+			 instDesde = args[0].toString();
+			 instHasta = args[1].toString();
+			 iterLibertad = args[2].toString();
+			 cantRepeticiones = Integer.parseInt(args[3].toString());
+			 
+		 }else {
+		 
+			 System.out.println("Lista de instancias disponibles: \n");
+			 for(Map.Entry<Integer, String> instance:mNombresInstanciasCargadas.entrySet()) {
+				 System.out.println(instance.getKey()+" - "+instance.getValue());
+			 }
+			 Scanner in = new Scanner(System.in);
+			 System.out.println("\nIngresa DESDE qué instancia quieres procesar: ");
+			  instDesde = in.nextLine();
+	//		 
+			 System.out.println("\nIngresa HASTA qué inastancia quieres procesar: ");
+			  instHasta = in.nextLine();
+			 
+			 System.out.println("\nIngresa el intervalo de libertad para intervenir la MH con ML (Default en 200): ");
+			  iterLibertad = in.nextLine();
+			 if(iterLibertad != "")
+			 	iterIntervML = Integer.parseInt(iterLibertad);
+			 
+			 System.out.println("\nIngresa la cantidad de repeticiones (default 31): ");
+			  strCantRepeticiones = in.nextLine();
+			 if(strCantRepeticiones != "")
+				 cantRepeticiones = Integer.parseInt(strCantRepeticiones);
+			 
+			 System.out.println("\npresiona cualquier tecla paracontinuar: ");
+			 in.nextLine();
+	//		 ExecutorService exec = Executors.newFixedThreadPool(2);
+			 System.out.print("inicio: "+mTiposDeBinarizacion.size()+"\n");
 		 }
-		 Scanner in = new Scanner(System.in);
-		 System.out.println("\nIngresa DESDE qué instancia quieres procesar: ");
-		 String instDesde = in.nextLine();
-//		 
-		 System.out.println("\nIngresa HASTA qué inastancia quieres procesar: ");
-		 String instHasta = in.nextLine();
 		 int instKey = 1;
 		 for(int inst = Integer.parseInt(instDesde); inst<= Integer.parseInt(instHasta); inst++ ) {
 			 mNombresInstanciasProcesar.put(instKey, mNombresInstanciasCargadas.get(inst));
@@ -492,22 +518,8 @@ public class Main {
 		 for(Map.Entry<Integer, String> instance:mNombresInstanciasProcesar.entrySet()) {
 			 System.out.println(instance.getKey()+" - "+instance.getValue());
 		 }
-		 System.out.println("\nIngresa el intervalo de libertad para intervenir la MH con ML (Default en 200): ");
-		 String iterLibertad = in.nextLine();
-		 if(iterLibertad != "")
-		 	iterIntervML = Integer.parseInt(iterLibertad);
 		 
-		 System.out.println("\nIngresa la cantidad de repeticiones (default 31): ");
-		 String strCantRepeticiones = in.nextLine();
-		 if(strCantRepeticiones != "")
-			 cantRepeticiones = Integer.parseInt(strCantRepeticiones);
-		 
-		 System.out.println("\npresiona cualquier tecla paracontinuar: ");
-		 in.nextLine();
-//		 ExecutorService exec = Executors.newFixedThreadPool(2);
-		 System.out.print("inicio: "+mTiposDeBinarizacion.size()+"\n");
-		 
-			 CuckooSearch CS_SCP1 = new CuckooSearch(cantNidos, 
+		 CuckooSearch CS_SCP1 = new CuckooSearch(cantNidos, 
             												probDescub,  
             												numeroIteraciones,
             												mNombresInstanciasProcesar,
